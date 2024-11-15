@@ -1,32 +1,42 @@
-import InputError from '@/Components/InputError';
-import InputLabel from '@/Components/InputLabel';
-import PrimaryButton from '@/Components/PrimaryButton';
-import TextInput from '@/Components/TextInput';
-import { Transition } from '@headlessui/react';
-import { Link, useForm, usePage } from '@inertiajs/react';
-import { FormEventHandler } from 'react';
+import {Button, TextInput} from '@mantine/core';
+import {useDisclosure} from '@mantine/hooks';
+import {Link, useForm, usePage} from '@inertiajs/react';
+import {FormEventHandler} from 'react';
+import {useNotification} from "@/Context/NotificationContext";
 
 export default function UpdateProfileInformation({
-    mustVerifyEmail,
-    status,
-    className = '',
-}: {
+                                                     mustVerifyEmail,
+                                                     status,
+                                                     className = '',
+                                                 }: {
     mustVerifyEmail: boolean;
     status?: string;
     className?: string;
 }) {
     const user = usePage().props.auth.user;
 
-    const { data, setData, patch, errors, processing, recentlySuccessful } =
+    const {data, setData, patch, errors, recentlySuccessful} =
         useForm({
-            name: user.name,
+            firstname: user.firstname,
+            lastname: user.lastname,
             email: user.email,
         });
 
+    const [loading, {open, close}] = useDisclosure();
+    const {triggerNotification} = useNotification();
+
     const submit: FormEventHandler = (e) => {
         e.preventDefault();
-
-        patch(route('profile.update'));
+        open();
+        patch(route('profile.update'), {
+            onFinish: () => {
+                close();
+                triggerNotification();
+            },
+            onError: () => {
+                close();
+            },
+        });
     };
 
     return (
@@ -42,37 +52,48 @@ export default function UpdateProfileInformation({
             </header>
 
             <form onSubmit={submit} className="mt-6 space-y-6">
-                <div>
-                    <InputLabel htmlFor="name" value="Name" />
+                <TextInput
+                    inputWrapperOrder={['label', 'input', 'error']}
+                    mt="md"
+                    type="text"
+                    label="First Name"
+                    placeholder="Jack"
+                    error={errors.firstname}
+                    withAsterisk
+                    name="firstname"
+                    autoComplete="firstname"
+                    value={data.firstname}
+                    onChange={(e) => setData('firstname', e.target.value)}
+                    autoFocus={true}
+                />
 
-                    <TextInput
-                        id="name"
-                        className="mt-1 block w-full"
-                        value={data.name}
-                        onChange={(e) => setData('name', e.target.value)}
-                        required
-                        isFocused
-                        autoComplete="name"
-                    />
+                <TextInput
+                    inputWrapperOrder={['label', 'input', 'error']}
+                    mt="md"
+                    type="text"
+                    label="Last Name"
+                    placeholder="Doe"
+                    error={errors.lastname}
+                    withAsterisk
+                    name="lastname"
+                    autoComplete="lastname"
+                    value={data.lastname}
+                    onChange={(e) => setData('lastname', e.target.value)}
+                />
 
-                    <InputError className="mt-2" message={errors.name} />
-                </div>
-
-                <div>
-                    <InputLabel htmlFor="email" value="Email" />
-
-                    <TextInput
-                        id="email"
-                        type="email"
-                        className="mt-1 block w-full"
-                        value={data.email}
-                        onChange={(e) => setData('email', e.target.value)}
-                        required
-                        autoComplete="username"
-                    />
-
-                    <InputError className="mt-2" message={errors.email} />
-                </div>
+                <TextInput
+                    mt="md"
+                    type="email"
+                    label="Email"
+                    placeholder="example@mail.com"
+                    error={errors.email}
+                    withAsterisk
+                    inputWrapperOrder={['label', 'input', 'error']}
+                    name="email"
+                    autoComplete="username"
+                    value={data.email}
+                    onChange={(e) => setData('email', e.target.value)}
+                />
 
                 {mustVerifyEmail && user.email_verified_at === null && (
                     <div>
@@ -98,19 +119,16 @@ export default function UpdateProfileInformation({
                 )}
 
                 <div className="flex items-center gap-4">
-                    <PrimaryButton disabled={processing}>Save</PrimaryButton>
-
-                    <Transition
-                        show={recentlySuccessful}
-                        enter="transition ease-in-out"
-                        enterFrom="opacity-0"
-                        leave="transition ease-in-out"
-                        leaveTo="opacity-0"
+                    <Button
+                        type="submit"
+                        fullWidth
+                        variant="filled"
+                        color="rgba(0, 0, 0, 1)"
+                        loading={loading}
+                        loaderProps={{type: 'dots'}}
                     >
-                        <p className="text-sm text-gray-600 dark:text-gray-400">
-                            Saved.
-                        </p>
-                    </Transition>
+                        Save
+                    </Button>
                 </div>
             </form>
         </section>

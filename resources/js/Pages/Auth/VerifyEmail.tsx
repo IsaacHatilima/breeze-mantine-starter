@@ -1,20 +1,31 @@
-import PrimaryButton from '@/Components/PrimaryButton';
 import GuestLayout from '@/Layouts/GuestLayout';
-import { Head, Link, useForm } from '@inertiajs/react';
-import { FormEventHandler } from 'react';
+import {Head, Link, useForm} from '@inertiajs/react';
+import {FormEventHandler} from 'react';
+import {Button} from '@mantine/core';
+import {useDisclosure} from '@mantine/hooks';
 
-export default function VerifyEmail({ status }: { status?: string }) {
-    const { post, processing } = useForm({});
+export default function VerifyEmail({status}: { status?: string }) {
+    const {post, processing} = useForm({});
+
+    const [loading, {open, close}] = useDisclosure();
 
     const submit: FormEventHandler = (e) => {
         e.preventDefault();
 
-        post(route('verification.send'));
+        open();
+        post(route('verification.send'), {
+            onFinish: () => {
+                close();
+            },
+            onError: () => {
+                close();
+            },
+        });
     };
 
     return (
         <GuestLayout>
-            <Head title="Email Verification" />
+            <Head title="Email Verification"/>
 
             <div className="mb-4 text-sm text-gray-600 dark:text-gray-400">
                 Thanks for signing up! Before getting started, could you verify
@@ -32,9 +43,19 @@ export default function VerifyEmail({ status }: { status?: string }) {
 
             <form onSubmit={submit}>
                 <div className="mt-4 flex items-center justify-between">
-                    <PrimaryButton disabled={processing}>
+                    <Button disabled={processing}>
                         Resend Verification Email
-                    </PrimaryButton>
+                    </Button>
+                    <Button
+                        type="submit"
+                        fullWidth
+                        variant="filled"
+                        color="rgba(0, 0, 0, 1)"
+                        loading={loading}
+                        loaderProps={{type: 'dots'}}
+                    >
+                        Resend Verification Email
+                    </Button>
 
                     <Link
                         href={route('logout')}

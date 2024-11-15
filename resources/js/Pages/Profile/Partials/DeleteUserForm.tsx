@@ -1,19 +1,17 @@
-import DangerButton from '@/Components/DangerButton';
-import InputError from '@/Components/InputError';
-import InputLabel from '@/Components/InputLabel';
 import Modal from '@/Components/Modal';
-import SecondaryButton from '@/Components/SecondaryButton';
-import TextInput from '@/Components/TextInput';
-import { useForm } from '@inertiajs/react';
-import { FormEventHandler, useRef, useState } from 'react';
+import {useForm} from '@inertiajs/react';
+import {FormEventHandler, useRef, useState} from 'react';
+import {Button, PasswordInput} from '@mantine/core';
+import {useDisclosure} from '@mantine/hooks';
 
 export default function DeleteUserForm({
-    className = '',
-}: {
+                                           className = '',
+                                       }: {
     className?: string;
 }) {
     const [confirmingUserDeletion, setConfirmingUserDeletion] = useState(false);
     const passwordInput = useRef<HTMLInputElement>(null);
+    const [loading, {open, close}] = useDisclosure();
 
     const {
         data,
@@ -33,13 +31,20 @@ export default function DeleteUserForm({
 
     const deleteUser: FormEventHandler = (e) => {
         e.preventDefault();
-
+        open();
         destroy(route('profile.destroy'), {
             preserveScroll: true,
-            onSuccess: () => closeModal(),
-            onError: () => passwordInput.current?.focus(),
-            onFinish: () => reset(),
+            onSuccess: () => {
+                closeModal()
+            },
+            onError: () => {
+                passwordInput.current?.focus()
+            },
+            onFinish: () => {
+                reset()
+            },
         });
+        close();
     };
 
     const closeModal = () => {
@@ -64,9 +69,9 @@ export default function DeleteUserForm({
                 </p>
             </header>
 
-            <DangerButton onClick={confirmUserDeletion}>
+            <Button variant="filled" color="red" onClick={confirmUserDeletion}>
                 Delete Account
-            </DangerButton>
+            </Button>
 
             <Modal show={confirmingUserDeletion} onClose={closeModal}>
                 <form onSubmit={deleteUser} className="p-6">
@@ -81,41 +86,27 @@ export default function DeleteUserForm({
                         your account.
                     </p>
 
-                    <div className="mt-6">
-                        <InputLabel
-                            htmlFor="password"
-                            value="Password"
-                            className="sr-only"
-                        />
-
-                        <TextInput
-                            id="password"
-                            type="password"
-                            name="password"
-                            ref={passwordInput}
-                            value={data.password}
-                            onChange={(e) =>
-                                setData('password', e.target.value)
-                            }
-                            className="mt-1 block w-3/4"
-                            isFocused
-                            placeholder="Password"
-                        />
-
-                        <InputError
-                            message={errors.password}
-                            className="mt-2"
-                        />
-                    </div>
+                    <PasswordInput
+                        mt="md"
+                        label="Password"
+                        placeholder="Password"
+                        ref={passwordInput}
+                        error={errors.password}
+                        withAsterisk
+                        inputWrapperOrder={['label', 'input', 'error']}
+                        name="password"
+                        value={data.password}
+                        onChange={(e) => setData('password', e.target.value)}
+                    />
 
                     <div className="mt-6 flex justify-end">
-                        <SecondaryButton onClick={closeModal}>
+                        <Button variant="filled" color="gray" onClick={closeModal}>
                             Cancel
-                        </SecondaryButton>
+                        </Button>
 
-                        <DangerButton className="ms-3" disabled={processing}>
+                        <Button type="submit" variant="filled" color="red" className="ms-3" disabled={processing}>
                             Delete Account
-                        </DangerButton>
+                        </Button>
                     </div>
                 </form>
             </Modal>

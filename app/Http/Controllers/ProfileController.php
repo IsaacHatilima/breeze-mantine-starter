@@ -2,6 +2,8 @@
 
 namespace App\Http\Controllers;
 
+use App\Actions\Auth\UpdateProfileAction;
+use App\Http\Requests\Auth\ConfirmPasswordRequest;
 use App\Http\Requests\ProfileUpdateRequest;
 use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Http\RedirectResponse;
@@ -13,6 +15,13 @@ use Inertia\Response;
 
 class ProfileController extends Controller
 {
+    private UpdateProfileAction $updateProfileAction;
+
+    public function __construct(UpdateProfileAction $updateProfileAction)
+    {
+        $this->updateProfileAction = $updateProfileAction;
+    }
+
     /**
      * Display the user's profile form.
      */
@@ -29,13 +38,7 @@ class ProfileController extends Controller
      */
     public function update(ProfileUpdateRequest $request): RedirectResponse
     {
-        $request->user()->fill($request->validated());
-
-        if ($request->user()->isDirty('email')) {
-            $request->user()->email_verified_at = null;
-        }
-
-        $request->user()->save();
+        $this->updateProfileAction->update_profile($request);
 
         return Redirect::route('profile.edit');
     }
@@ -43,12 +46,8 @@ class ProfileController extends Controller
     /**
      * Delete the user's account.
      */
-    public function destroy(Request $request): RedirectResponse
+    public function destroy(ConfirmPasswordRequest $request): RedirectResponse
     {
-        $request->validate([
-            'password' => ['required', 'current_password'],
-        ]);
-
         $user = $request->user();
 
         Auth::logout();

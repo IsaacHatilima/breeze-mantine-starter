@@ -1,24 +1,34 @@
-import InputError from '@/Components/InputError';
-import PrimaryButton from '@/Components/PrimaryButton';
-import TextInput from '@/Components/TextInput';
+import {Alert, Button, TextInput} from '@mantine/core';
 import GuestLayout from '@/Layouts/GuestLayout';
-import { Head, useForm } from '@inertiajs/react';
-import { FormEventHandler } from 'react';
+import {Head, useForm} from '@inertiajs/react';
+import {FormEventHandler} from 'react';
+import {useDisclosure} from "@mantine/hooks";
 
-export default function ForgotPassword({ status }: { status?: string }) {
-    const { data, setData, post, processing, errors } = useForm({
+export default function ForgotPassword({status}: { status?: string }) {
+    const {data, setData, post, reset, errors} = useForm({
         email: '',
     });
+
+    const [loading, {open, close}] = useDisclosure();
 
     const submit: FormEventHandler = (e) => {
         e.preventDefault();
 
-        post(route('password.email'));
+        open();
+        post(route('password.email'), {
+            onFinish: () => {
+                reset('email');
+                close();
+            },
+            onError: () => {
+                close();
+            },
+        });
     };
 
     return (
         <GuestLayout>
-            <Head title="Forgot Password" />
+            <Head title="Forgot Password"/>
 
             <div className="mb-4 text-sm text-gray-600 dark:text-gray-400">
                 Forgot your password? No problem. Just let us know your email
@@ -27,28 +37,38 @@ export default function ForgotPassword({ status }: { status?: string }) {
             </div>
 
             {status && (
-                <div className="mb-4 text-sm font-medium text-green-600 dark:text-green-400">
+                <Alert variant="light" color="green" radius="md" title="Success">
                     {status}
-                </div>
+                </Alert>
             )}
 
             <form onSubmit={submit}>
                 <TextInput
-                    id="email"
+                    mt="md"
                     type="email"
+                    label="Email"
+                    placeholder="example@mail.com"
+                    error={errors.email}
+                    withAsterisk
+                    inputWrapperOrder={['label', 'input', 'error']}
                     name="email"
+                    autoComplete="username"
                     value={data.email}
-                    className="mt-1 block w-full"
-                    isFocused={true}
                     onChange={(e) => setData('email', e.target.value)}
+                    autoFocus={true}
                 />
 
-                <InputError message={errors.email} className="mt-2" />
-
                 <div className="mt-4 flex items-center justify-end">
-                    <PrimaryButton className="ms-4" disabled={processing}>
+                    <Button
+                        type="submit"
+                        fullWidth
+                        variant="filled"
+                        color="rgba(0, 0, 0, 1)"
+                        loading={loading}
+                        loaderProps={{type: 'dots'}}
+                    >
                         Email Password Reset Link
-                    </PrimaryButton>
+                    </Button>
                 </div>
             </form>
         </GuestLayout>

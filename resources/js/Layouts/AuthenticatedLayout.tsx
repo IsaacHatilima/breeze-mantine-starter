@@ -2,17 +2,20 @@ import ApplicationLogo from '@/Components/ApplicationLogo';
 import Dropdown from '@/Components/Dropdown';
 import NavLink from '@/Components/NavLink';
 import ResponsiveNavLink from '@/Components/ResponsiveNavLink';
-import { Link, usePage } from '@inertiajs/react';
-import { PropsWithChildren, ReactNode, useState } from 'react';
+import {Link, usePage} from '@inertiajs/react';
+import {PropsWithChildren, ReactNode, useState} from 'react';
+import {Notification} from "@mantine/core";
+import {useNotification} from "@/Context/NotificationContext";
 
 export default function Authenticated({
-    header,
-    children,
-}: PropsWithChildren<{ header?: ReactNode }>) {
+                                          header,
+                                          children,
+                                      }: PropsWithChildren<{ header?: ReactNode }>) {
     const user = usePage().props.auth.user;
-
     const [showingNavigationDropdown, setShowingNavigationDropdown] =
         useState(false);
+
+    const {showNotification} = useNotification();
 
     return (
         <div className="min-h-screen bg-gray-100 dark:bg-gray-900">
@@ -22,7 +25,8 @@ export default function Authenticated({
                         <div className="flex">
                             <div className="flex shrink-0 items-center">
                                 <Link href="/">
-                                    <ApplicationLogo className="block h-9 w-auto fill-current text-gray-800 dark:text-gray-200" />
+                                    <ApplicationLogo
+                                        className="block h-9 w-auto fill-current text-gray-800 dark:text-gray-200"/>
                                 </Link>
                             </div>
 
@@ -45,7 +49,7 @@ export default function Authenticated({
                                                 type="button"
                                                 className="inline-flex items-center rounded-md border border-transparent bg-white px-3 py-2 text-sm font-medium leading-4 text-gray-500 transition duration-150 ease-in-out hover:text-gray-700 focus:outline-none dark:bg-gray-800 dark:text-gray-400 dark:hover:text-gray-300"
                                             >
-                                                {user.name}
+                                                {user.firstname}
 
                                                 <svg
                                                     className="-me-0.5 ms-2 h-4 w-4"
@@ -142,7 +146,7 @@ export default function Authenticated({
                     <div className="border-t border-gray-200 pb-1 pt-4 dark:border-gray-600">
                         <div className="px-4">
                             <div className="text-base font-medium text-gray-800 dark:text-gray-200">
-                                {user.name}
+                                {user.firstname}
                             </div>
                             <div className="text-sm font-medium text-gray-500">
                                 {user.email}
@@ -172,8 +176,16 @@ export default function Authenticated({
                     </div>
                 </header>
             )}
-
-            <main>{children}</main>
+            <div className="flex justify-end z-50">
+                {showNotification && (
+                    <Notification withCloseButton={false} color="green" title="We notify you that" className="w-96">
+                        You are now obligated to give a star to Mantine project on GitHub
+                    </Notification>
+                )}
+            </div>
+            <main>
+                {children}
+            </main>
         </div>
     );
 }

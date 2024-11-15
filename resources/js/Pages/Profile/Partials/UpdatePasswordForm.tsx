@@ -1,26 +1,24 @@
-import InputError from '@/Components/InputError';
-import InputLabel from '@/Components/InputLabel';
-import PrimaryButton from '@/Components/PrimaryButton';
-import TextInput from '@/Components/TextInput';
-import { Transition } from '@headlessui/react';
-import { useForm } from '@inertiajs/react';
-import { FormEventHandler, useRef } from 'react';
+import {Button, PasswordInput} from '@mantine/core';
+import {useForm} from '@inertiajs/react';
+import {FormEventHandler, useRef} from 'react';
+import {useDisclosure} from '@mantine/hooks';
+import {useNotification} from "@/Context/NotificationContext";
 
 export default function UpdatePasswordForm({
-    className = '',
-}: {
+                                               className = '',
+                                           }: {
     className?: string;
 }) {
     const passwordInput = useRef<HTMLInputElement>(null);
     const currentPasswordInput = useRef<HTMLInputElement>(null);
-
+    const [loading, {open, close}] = useDisclosure();
+    const {triggerNotification} = useNotification();
     const {
         data,
         setData,
         errors,
         put,
         reset,
-        processing,
         recentlySuccessful,
     } = useForm({
         current_password: '',
@@ -30,10 +28,15 @@ export default function UpdatePasswordForm({
 
     const updatePassword: FormEventHandler = (e) => {
         e.preventDefault();
+        open();
 
         put(route('password.update'), {
             preserveScroll: true,
-            onSuccess: () => reset(),
+            onFinish: () => {
+                triggerNotification();
+                reset();
+                close();
+            },
             onError: (errors) => {
                 if (errors.password) {
                     reset('password', 'password_confirmation');
@@ -44,8 +47,10 @@ export default function UpdatePasswordForm({
                     reset('current_password');
                     currentPasswordInput.current?.focus();
                 }
+                close();
             },
         });
+
     };
 
     return (
@@ -62,83 +67,55 @@ export default function UpdatePasswordForm({
             </header>
 
             <form onSubmit={updatePassword} className="mt-6 space-y-6">
-                <div>
-                    <InputLabel
-                        htmlFor="current_password"
-                        value="Current Password"
-                    />
+                <PasswordInput
+                    mt="md"
+                    label="Current Password"
+                    placeholder="Current Password"
+                    error={errors.current_password}
+                    ref={currentPasswordInput}
+                    withAsterisk
+                    inputWrapperOrder={['label', 'input', 'error']}
+                    name="current_password"
+                    value={data.current_password}
+                    onChange={(e) => setData('current_password', e.target.value)}
+                />
 
-                    <TextInput
-                        id="current_password"
-                        ref={currentPasswordInput}
-                        value={data.current_password}
-                        onChange={(e) =>
-                            setData('current_password', e.target.value)
-                        }
-                        type="password"
-                        className="mt-1 block w-full"
-                        autoComplete="current-password"
-                    />
+                <PasswordInput
+                    mt="md"
+                    label="Password"
+                    placeholder="Password"
+                    ref={passwordInput}
+                    error={errors.password}
+                    withAsterisk
+                    inputWrapperOrder={['label', 'input', 'error']}
+                    name="password"
+                    value={data.password}
+                    onChange={(e) => setData('password', e.target.value)}
+                />
 
-                    <InputError
-                        message={errors.current_password}
-                        className="mt-2"
-                    />
-                </div>
-
-                <div>
-                    <InputLabel htmlFor="password" value="New Password" />
-
-                    <TextInput
-                        id="password"
-                        ref={passwordInput}
-                        value={data.password}
-                        onChange={(e) => setData('password', e.target.value)}
-                        type="password"
-                        className="mt-1 block w-full"
-                        autoComplete="new-password"
-                    />
-
-                    <InputError message={errors.password} className="mt-2" />
-                </div>
-
-                <div>
-                    <InputLabel
-                        htmlFor="password_confirmation"
-                        value="Confirm Password"
-                    />
-
-                    <TextInput
-                        id="password_confirmation"
-                        value={data.password_confirmation}
-                        onChange={(e) =>
-                            setData('password_confirmation', e.target.value)
-                        }
-                        type="password"
-                        className="mt-1 block w-full"
-                        autoComplete="new-password"
-                    />
-
-                    <InputError
-                        message={errors.password_confirmation}
-                        className="mt-2"
-                    />
-                </div>
+                <PasswordInput
+                    mt="md"
+                    label="Password Confirmation"
+                    placeholder="Password Confirmation"
+                    error={errors.password_confirmation}
+                    withAsterisk
+                    inputWrapperOrder={['label', 'input', 'error']}
+                    name="password_confirmation"
+                    value={data.password_confirmation}
+                    onChange={(e) => setData('password_confirmation', e.target.value)}
+                />
 
                 <div className="flex items-center gap-4">
-                    <PrimaryButton disabled={processing}>Save</PrimaryButton>
-
-                    <Transition
-                        show={recentlySuccessful}
-                        enter="transition ease-in-out"
-                        enterFrom="opacity-0"
-                        leave="transition ease-in-out"
-                        leaveTo="opacity-0"
+                    <Button
+                        type="submit"
+                        fullWidth
+                        variant="filled"
+                        color="rgba(0, 0, 0, 1)"
+                        loading={loading}
+                        loaderProps={{type: 'dots'}}
                     >
-                        <p className="text-sm text-gray-600 dark:text-gray-400">
-                            Saved.
-                        </p>
-                    </Transition>
+                        Save
+                    </Button>
                 </div>
             </form>
         </section>
