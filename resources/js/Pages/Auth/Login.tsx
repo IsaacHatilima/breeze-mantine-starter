@@ -1,8 +1,7 @@
-import Checkbox from '@/Components/Checkbox';
 import GuestLayout from '@/Layouts/GuestLayout';
 import {Head, Link, useForm} from '@inertiajs/react';
 import {FormEventHandler} from 'react';
-import {Alert, Button, PasswordInput, TextInput} from '@mantine/core';
+import {Alert, Button, Checkbox, PasswordInput, TextInput} from '@mantine/core';
 import {useDisclosure} from '@mantine/hooks';
 
 export default function Login({status}: { status?: string }) {

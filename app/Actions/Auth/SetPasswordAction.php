@@ -25,4 +25,11 @@ class SetPasswordAction
             'remember_token' => Str::random(60),
         ])->save();
     }
+
+    public function change_password($request): void
+    {
+        $request->user()->update([
+            'password' => Hash::make($request->password),
+        ]);
+    }
 }

@@ -8,6 +8,7 @@ use App\Http\Controllers\Auth\NewPasswordController;
 use App\Http\Controllers\Auth\PasswordController;
 use App\Http\Controllers\Auth\PasswordResetLinkController;
 use App\Http\Controllers\Auth\RegisteredUserController;
+use App\Http\Controllers\Auth\TwoFactorController;
 use App\Http\Controllers\Auth\VerifyEmailController;
 use Illuminate\Support\Facades\Route;
 
@@ -50,7 +51,11 @@ Route::middleware('auth')->group(function () {
 
     Route::post('confirm-password', [ConfirmablePasswordController::class, 'store']);
 
+    Route::get('change-password', [PasswordController::class, 'edit'])->name('password.change');
     Route::put('password', [PasswordController::class, 'update'])->name('password.update');
+
+    Route::get('two-factor-auth', [TwoFactorController::class, 'index'])->name('two-factor.auth');
+    Route::patch('two-factor-auth', [TwoFactorController::class, 'clear_two_factor_confirmed_at'])->name('clear.2fa.confirmation');
 
     Route::post('logout', [AuthenticatedSessionController::class, 'destroy'])
         ->name('logout');

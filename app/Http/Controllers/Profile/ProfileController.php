@@ -1,14 +1,13 @@
 <?php
 
-namespace App\Http\Controllers;
+namespace App\Http\Controllers\Profile;
 
 use App\Actions\Auth\UpdateProfileAction;
-use App\Http\Requests\Auth\ConfirmPasswordRequest;
+use App\Http\Controllers\Controller;
 use App\Http\Requests\ProfileUpdateRequest;
 use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Redirect;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -41,22 +40,5 @@ class ProfileController extends Controller
         $this->updateProfileAction->update_profile($request);
 
         return Redirect::route('profile.edit');
-    }
-
-    /**
-     * Delete the user's account.
-     */
-    public function destroy(ConfirmPasswordRequest $request): RedirectResponse
-    {
-        $user = $request->user();
-
-        Auth::logout();
-
-        $user->delete();
-
-        $request->session()->invalidate();
-        $request->session()->regenerateToken();
-
-        return Redirect::to('/');
     }
 }

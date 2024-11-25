@@ -36,10 +36,6 @@ class PasswordResetLinkController extends Controller
      */
     public function store(PasswordResetRequest $request): RedirectResponse
     {
-        $request->validate([
-            'email' => 'required|email',
-        ]);
-
         $this->passwordResetLinkAction->send_link($request->only('email'));
 
         return back()->with('status', 'Password reset link sent on your email address.');
