@@ -56,6 +56,7 @@ Route::middleware('auth')->group(function () {
 
     Route::get('two-factor-auth', [TwoFactorController::class, 'index'])->name('two-factor.auth');
     Route::patch('two-factor-auth', [TwoFactorController::class, 'clear_two_factor_confirmed_at'])->name('clear.2fa.confirmation');
+    Route::put('two-factor-auth', [TwoFactorController::class, 'copy_recovery_codes'])->name('copy.2fa.codes');
 
     Route::post('logout', [AuthenticatedSessionController::class, 'destroy'])
         ->name('logout');

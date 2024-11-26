@@ -1,10 +1,10 @@
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
-import {Button, PinInput} from '@mantine/core';
+import {Button, PasswordInput, PinInput} from '@mantine/core';
 import {Head, router, useForm, usePage} from '@inertiajs/react';
 import {useDisclosure} from '@mantine/hooks';
 import {useNotification} from "@/Context/NotificationContext";
 import axios from 'axios';
-import {useEffect, useState} from "react";
+import React, {FormEventHandler, useEffect, useState} from "react";
 import Modal from "@/Components/Modal";
 
 
@@ -13,22 +13,30 @@ export default function UpdatePasswordForm({}: { className?: string; }) {
 
     const [loading, {open, close}] = useDisclosure();
     const {triggerNotification} = useNotification();
+    const [activateTwoFactorModal, setActivateTwoFactorModal] = useState(false);
     const [confirmingUserDeletion, setConfirmingUserDeletion] = useState(false);
     const [qrCodeSvg, setQrCodeSvg] = useState<string | null>(null);
     const [recoveryCodes, setRecoveryCodes] = useState<string[] | null>(null);
+
     const confirmUserDeletion = () => {
         setConfirmingUserDeletion(true);
     };
-    const {
-        reset,
-        clearErrors,
-        data, setData,
-    } = useForm({
+
+    const activatingTwoFactorModal = () => {
+        setActivateTwoFactorModal(true);
+    };
+
+    const [errors, setErrors] = useState<{ password?: string }>({});
+
+    const {reset, clearErrors, data, setData} = useForm({
         code: '',
+        password: ''
     });
+
+
     const closeModal = () => {
         setConfirmingUserDeletion(false);
-
+        setActivateTwoFactorModal(false);
         clearErrors();
         reset();
     };
@@ -41,18 +49,37 @@ export default function UpdatePasswordForm({}: { className?: string; }) {
     }
 
     useEffect(() => {
-        getTwoFactorQRCode();
-        getTwoFactorRecoveryCodes();
+        if (user.two_factor_secret && user.two_factor_recovery_codes) {
+            handleGetTwoFactorQRCode();
+            handleGetTwoFactorRecoveryCodes();
+        }
     }, []);
 
-    // Activate 2FA
-    function activateTwoFA(e: any) {
+    // Confirm Password
+    const handleConfirmUserPassword: FormEventHandler = (e) => {
         e.preventDefault();
+        open();
+        if (data.password !== '') {
+            axios.post('/user/confirm-password', {'password': data.password})
+                .then(response => {
+                    handleActivateTwoFactor();
+                })
+                .catch(error => {
+                    setErrors({password: 'Invalid Password.'});
+                });
+        } else {
+            setErrors({password: 'Password is required.'});
+        }
+        close();
+    };
+
+    // Activate 2FA
+    const handleActivateTwoFactor = () => {
         open();
         axios.post('/user/two-factor-authentication')
             .then(response => {
                 refreshUser();
-                getTwoFactorQRCode();
+                handleGetTwoFactorQRCode();
                 triggerNotification('Success', '2FA has been enabled.', 'green');
                 close();
             })
@@ -63,12 +90,11 @@ export default function UpdatePasswordForm({}: { className?: string; }) {
     }
 
     // Disable 2FA
-    function deactivateTwoFA(e: any) {
-        e.preventDefault();
+    const handleDeactivateTwoFA = () => {
         open();
         axios.delete('/user/two-factor-authentication')
             .then(response => {
-                two_factor_confirmed_at();
+                handleClearConfirmedAt();
                 refreshUser();
                 triggerNotification('Success', '2FA has been disabled.', 'green');
                 close();
@@ -79,7 +105,8 @@ export default function UpdatePasswordForm({}: { className?: string; }) {
             });
     }
 
-    function two_factor_confirmed_at() {
+    // Clear 2FA Confirmed At
+    const handleClearConfirmedAt = () => {
         axios.patch(route('clear.2fa.confirmation'))
             .then(response => {
 
@@ -89,21 +116,24 @@ export default function UpdatePasswordForm({}: { className?: string; }) {
             });
     }
 
-    function getTwoFactorQRCode() {
+    // Get 2FA QR Code
+    const handleGetTwoFactorQRCode = () => {
         axios.get('/user/two-factor-qr-code')
             .then(response => {
                 setQrCodeSvg(response.data.svg);
             });
     }
 
-    function getTwoFactorRecoveryCodes() {
+    // Get 2FA Recovery Codes
+    const handleGetTwoFactorRecoveryCodes = () => {
         axios.get('/user/two-factor-recovery-codes')
             .then(response => {
                 setRecoveryCodes(response.data); // Update the ref's value
             });
     }
 
-    function submitOTP(e: any) {
+    // Verify 2FA Code
+    const handleCodeSubmit: FormEventHandler = (e) => {
         e.preventDefault();
         open();
         try {
@@ -111,7 +141,7 @@ export default function UpdatePasswordForm({}: { className?: string; }) {
             axios.post('/user/confirmed-two-factor-authentication', {'code': data.code})
                 .then(response => {
                     refreshUser()
-                    getTwoFactorRecoveryCodes();
+                    handleGetTwoFactorRecoveryCodes();
                     triggerNotification('Success', '2FA has been confirmed.', 'green');
                 })
                 .catch(error => {
@@ -124,6 +154,34 @@ export default function UpdatePasswordForm({}: { className?: string; }) {
             close();
         }
     }
+
+    const handleCopiedCodes = () => {
+        axios.put(route('copy.2fa.codes'))
+            .then(response => {
+                refreshUser();
+                triggerNotification('Success', '2FA recovery codes copied.', 'green');
+            })
+            .catch(error => {
+                triggerNotification('Warning', 'Unable to copy 2FA recovery codes.', 'yellow');
+            });
+    }
+    const handleDownloadCodes = () => {
+        open();
+
+        // @ts-ignore
+        const blob = new Blob([recoveryCodes.join('\n')], {type: 'text/plain'});
+        const link = document.createElement('a');
+        link.href = URL.createObjectURL(blob);
+        link.download = 'recoveryCodes.txt';
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        URL.revokeObjectURL(link.href);
+        handleCopiedCodes();
+
+        close();
+    };
+
 
     return (
         <AuthenticatedLayout>
@@ -148,7 +206,7 @@ export default function UpdatePasswordForm({}: { className?: string; }) {
                         />
                     )}
 
-                    {recoveryCodes && user.two_factor_confirmed_at && (
+                    {recoveryCodes && user.two_factor_confirmed_at && !user.copied_codes && (
                         <div className="flex justify-center items-center my-10">
                             <ul>
                                 {recoveryCodes.map((code: string, index: any) => (
@@ -161,24 +219,36 @@ export default function UpdatePasswordForm({}: { className?: string; }) {
                     )}
 
                     {user.two_factor_secret && user.two_factor_recovery_codes && user.two_factor_confirmed_at ? (
-                        <form onSubmit={deactivateTwoFA} className="mt-6 space-y-6">
-                            <div className="flex items-center gap-4">
+                        <div className="flex items-center gap-4 mt-4">
+                            <Button
+                                type="button"
+                                fullWidth
+                                variant="filled"
+                                color="red"
+                                loading={loading}
+                                loaderProps={{type: 'dots'}}
+                                onClick={handleDeactivateTwoFA}
+                            >
+                                Deactivate 2FA
+                            </Button>
+                            {!user.copied_codes && (
                                 <Button
-                                    type="submit"
+                                    type="button"
                                     fullWidth
                                     variant="filled"
-                                    color="red"
                                     loading={loading}
                                     loaderProps={{type: 'dots'}}
+                                    onClick={handleDownloadCodes}
                                 >
-                                    Deactivate 2FA
+                                    Copy Codes
                                 </Button>
-                            </div>
-                        </form>
+                            )}
+
+                        </div>
                     ) : user.two_factor_secret && user.two_factor_recovery_codes ? (
                         <div>
                             <div className="flex flex-row items-center justify-between gap-4">
-                                <form onSubmit={deactivateTwoFA}>
+                                <form onSubmit={handleDeactivateTwoFA}>
                                     <div className="flex items-center gap-4">
                                         <Button
                                             type="submit"
@@ -203,7 +273,8 @@ export default function UpdatePasswordForm({}: { className?: string; }) {
                             </div>
 
                             <Modal show={confirmingUserDeletion} onClose={closeModal}>
-                                <form onSubmit={submitOTP} className="mt-6 flex items-center justify-center flex-col">
+                                <form onSubmit={handleCodeSubmit}
+                                      className="mt-6 flex items-center justify-center flex-col">
                                     <h1 className="font-bold text-lg">Confirmation PIN</h1>
                                     <PinInput
                                         oneTimeCode
@@ -229,20 +300,49 @@ export default function UpdatePasswordForm({}: { className?: string; }) {
                             </Modal>
                         </div>
                     ) : (
-                        <form onSubmit={activateTwoFA} className="mt-6 space-y-6">
-                            <div className="flex items-center gap-4">
-                                <Button
-                                    type="submit"
-                                    fullWidth
-                                    variant="filled"
-                                    color="rgba(0, 0, 0, 1)"
-                                    loading={loading}
-                                    loaderProps={{type: 'dots'}}
-                                >
-                                    Active 2FA
-                                </Button>
-                            </div>
-                        </form>
+                        <div className="flex items-center gap-4 mt-2">
+                            <Button
+                                type="button"
+                                fullWidth
+                                variant="filled"
+                                color="rgba(0, 0, 0, 1)"
+                                onClick={activatingTwoFactorModal}
+                            >
+                                Active 2FA
+                            </Button>
+                            <Modal show={activateTwoFactorModal} onClose={closeModal} maxWidth={"sm"}>
+                                <div className="px-4">
+                                    <form onSubmit={handleConfirmUserPassword}>
+                                        <PasswordInput
+                                            mt="xl"
+                                            label="Password"
+                                            placeholder="Password"
+                                            error={errors.password}
+                                            withAsterisk
+                                            inputWrapperOrder={['label', 'input', 'error']}
+                                            name="password"
+                                            value={data.password}
+                                            onChange={(e) => setData('password', e.target.value)}
+                                            autoFocus={true}
+                                        />
+
+
+                                        <div className="flex items-center gap-4 my-4">
+                                            <Button
+                                                type="submit"
+                                                fullWidth
+                                                variant="filled"
+                                                color="rgba(0, 0, 0, 1)"
+                                                loading={loading}
+                                                loaderProps={{type: 'dots'}}
+                                            >
+                                                Active 2FA
+                                            </Button>
+                                        </div>
+                                    </form>
+                                </div>
+                            </Modal>
+                        </div>
                     )}
                 </div>
             </div>

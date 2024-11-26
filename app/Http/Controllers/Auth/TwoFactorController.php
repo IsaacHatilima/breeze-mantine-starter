@@ -19,4 +19,11 @@ class TwoFactorController extends Controller
 
         return response(null, 200);
     }
+
+    public function copy_recovery_codes(Request $request)
+    {
+        auth()->user()->update(['copied_codes' => true]);
+
+        return response(null, 200);
+    }
 }

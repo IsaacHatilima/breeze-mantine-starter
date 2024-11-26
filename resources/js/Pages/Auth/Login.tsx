@@ -6,8 +6,8 @@ import {useDisclosure} from '@mantine/hooks';
 
 export default function Login({status}: { status?: string }) {
     const {data, setData, post, errors, reset} = useForm({
-        email: 'test@example.com',
-        password: 'Password1#',
+        email: '',
+        password: '',
         remember: false,
     });
 

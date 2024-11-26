@@ -9,6 +9,7 @@ export interface User {
     two_factor_secret?: string;
     two_factor_recovery_codes?: string;
     two_factor_confirmed_at?: string;
+    copied_codes?: boolean
 }
 
 export type PageProps<
