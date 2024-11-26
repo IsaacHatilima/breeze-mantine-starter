@@ -8,7 +8,7 @@ import React, {FormEventHandler, useEffect, useState} from "react";
 import Modal from "@/Components/Modal";
 
 
-export default function UpdatePasswordForm({}: { className?: string; }) {
+export default function TwoFactor({}: { className?: string; }) {
     const user = usePage().props.auth.user;
 
     const [loading, {open, close}] = useDisclosure();

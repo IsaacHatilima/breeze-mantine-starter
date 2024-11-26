@@ -5,9 +5,9 @@ import {FormEventHandler, useRef} from 'react';
 import {useDisclosure} from '@mantine/hooks';
 import {useNotification} from "@/Context/NotificationContext";
 
-export default function UpdatePasswordForm({
-                                               className = '',
-                                           }: {
+export default function ChangePassword({
+                                           className = '',
+                                       }: {
     className?: string;
 }) {
     const passwordInput = useRef<HTMLInputElement>(null);
