@@ -26,6 +26,10 @@ export default function TwoFactor({}: { className?: string; }) {
         setActivateTwoFactorModal(true);
     };
 
+    const deactivateTwoFactorModal = () => {
+        setActivateTwoFactorModal(true);
+    };
+
     const [errors, setErrors] = useState<{ password?: string }>({});
 
     const {reset, clearErrors, data, setData} = useForm({
@@ -49,7 +53,7 @@ export default function TwoFactor({}: { className?: string; }) {
     }
 
     useEffect(() => {
-        if (user.two_factor_secret && user.two_factor_recovery_codes) {
+        if (user.two_factor_secret && !user.copied_codes) {
             handleGetTwoFactorQRCode();
             handleGetTwoFactorRecoveryCodes();
         }
@@ -90,10 +94,27 @@ export default function TwoFactor({}: { className?: string; }) {
     }
 
     // Disable 2FA
-    const handleDeactivateTwoFA = () => {
+    const handleDeactivateTwoFA: FormEventHandler = (e) => {
+        e.preventDefault();
         open();
+
+        if (data.password !== '') {
+            axios.post('/user/confirm-password', {'password': data.password})
+                .then(response => {
+                    deactivateTwoFA();
+                })
+                .catch(error => {
+                    setErrors({password: 'Invalid Password.'});
+                });
+        } else {
+            setErrors({password: 'Password is required.'});
+        }
+    }
+
+    const deactivateTwoFA = () => {
         axios.delete('/user/two-factor-authentication')
             .then(response => {
+                console.log('hereee');
                 handleClearConfirmedAt();
                 refreshUser();
                 triggerNotification('Success', '2FA has been disabled.', 'green');
@@ -220,6 +241,38 @@ export default function TwoFactor({}: { className?: string; }) {
 
                     {user.two_factor_secret && user.two_factor_recovery_codes && user.two_factor_confirmed_at ? (
                         <div className="flex items-center gap-4 mt-4">
+                            <Modal show={activateTwoFactorModal} onClose={closeModal} maxWidth={"sm"}>
+                                <div className="px-4">
+                                    <form onSubmit={handleDeactivateTwoFA}>
+                                        <PasswordInput
+                                            mt="xl"
+                                            label="Password"
+                                            placeholder="Password"
+                                            error={errors.password}
+                                            withAsterisk
+                                            inputWrapperOrder={['label', 'input', 'error']}
+                                            name="password"
+                                            value={data.password}
+                                            onChange={(e) => setData('password', e.target.value)}
+                                            autoFocus={true}
+                                        />
+
+
+                                        <div className="flex items-center gap-4 my-4">
+                                            <Button
+                                                type="submit"
+                                                fullWidth
+                                                variant="filled"
+                                                color="red"
+                                                loading={loading}
+                                                loaderProps={{type: 'dots'}}
+                                            >
+                                                Deactivate 2FA
+                                            </Button>
+                                        </div>
+                                    </form>
+                                </div>
+                            </Modal>
                             <Button
                                 type="button"
                                 fullWidth
@@ -227,7 +280,7 @@ export default function TwoFactor({}: { className?: string; }) {
                                 color="red"
                                 loading={loading}
                                 loaderProps={{type: 'dots'}}
-                                onClick={handleDeactivateTwoFA}
+                                onClick={activatingTwoFactorModal}
                             >
                                 Deactivate 2FA
                             </Button>

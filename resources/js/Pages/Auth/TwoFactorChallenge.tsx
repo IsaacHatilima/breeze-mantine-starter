@@ -38,7 +38,7 @@ export default function TwoFactorChallenge() {
                     onChange={(value: string) => setData('code', value)}
                 />
 
-                <div className="mt-4">
+                <div className="mt-4 w-full">
                     <Button
                         type="submit"
                         fullWidth

@@ -1,9 +1,10 @@
 import {usePage} from '@inertiajs/react';
 import {PropsWithChildren, ReactNode} from 'react';
 import {useNotification} from "@/Context/NotificationContext";
-import {AppShell, Burger, Group, Notification, Skeleton} from '@mantine/core';
+import {AppShell, Burger, Group, Notification} from '@mantine/core';
 import {useDisclosure, useMediaQuery} from '@mantine/hooks';
 import TopNav from "@/Components/TopNav";
+import SideNav from "@/Components/SideNav";
 
 
 export default function Authenticated({
@@ -33,12 +34,7 @@ export default function Authenticated({
                 </Group>
             </AppShell.Header>
             <AppShell.Navbar p="md">
-                Navbar
-                {Array(15)
-                    .fill(0)
-                    .map((_, index) => (
-                        <Skeleton key={index} h={28} mt="sm" animate={false}/>
-                    ))}
+                <SideNav/>
             </AppShell.Navbar>
             <AppShell.Main>
                 <div className="fixed right-4 z-50">
