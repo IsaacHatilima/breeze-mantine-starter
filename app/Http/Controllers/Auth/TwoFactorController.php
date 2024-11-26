@@ -13,6 +13,11 @@ class TwoFactorController extends Controller
         return Inertia::render('Auth/TwoFactor');
     }
 
+    public function create(Request $request)
+    {
+        return Inertia::render('Auth/TwoFactorChallenge');
+    }
+
     public function clear_two_factor_confirmed_at(Request $request)
     {
         auth()->user()->update(['two_factor_confirmed_at' => null]);

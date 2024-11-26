@@ -21,6 +21,9 @@ Route::middleware('guest')->group(function () {
     Route::get('/', [AuthenticatedSessionController::class, 'create'])
         ->name('login');
 
+    Route::get('/two-factor-challenge', [TwoFactorController::class, 'create'])
+        ->name('two-factor.login');
+
     Route::get('forgot-password', [PasswordResetLinkController::class, 'create'])
         ->name('password.request');
 
